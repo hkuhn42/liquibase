@@ -21,6 +21,7 @@ public class UpdateSqlCommandStep extends AbstractUpdateCommandStep {
     public static final CommandArgumentDefinition<Writer> OUTPUT_WRITER;
     public static final CommandArgumentDefinition<Boolean> OUTPUT_DEFAULT_SCHEMA_ARG;
     public static final CommandArgumentDefinition<Boolean> OUTPUT_DEFAULT_CATALOG_ARG;
+    public static final CommandArgumentDefinition<Boolean> SPLIT_SQL_OUTPUT_ARG;
 
     static {
         CommandBuilder builder = new CommandBuilder(COMMAND_NAME, LEGACY_COMMAND_NAME);
@@ -42,6 +43,10 @@ public class UpdateSqlCommandStep extends AbstractUpdateCommandStep {
                 .description("Control whether names of objects in the default catalog are fully qualified or not. If true they are. If false, only objects outside the default catalog are fully qualified")
                 .defaultValue(true)
                 .build();
+        SPLIT_SQL_OUTPUT_ARG = builder.argument("splitOutput", Boolean.class)
+                .description("Write output SQL to a separate file per changeset when outputFile is set")
+                .defaultValue(false)
+                .build();
     }
 
     @Override
@@ -57,7 +62,10 @@ public class UpdateSqlCommandStep extends AbstractUpdateCommandStep {
         final CommandScope commandScope = resultsBuilder.getCommandScope();
         final Database database = (Database) commandScope.getDependency(Database.class);
         final String changelogFile = commandScope.getArgumentValue(DatabaseChangelogCommandStep.CHANGELOG_FILE_ARG);
-        LoggingExecutorTextUtil.outputHeader("Update Database Script", database, changelogFile);
+        Boolean splitOutput = commandScope.getArgumentValue(SPLIT_SQL_OUTPUT_ARG);
+        if (!Boolean.TRUE.equals(splitOutput)) {
+            LoggingExecutorTextUtil.outputHeader("Update Database Script", database, changelogFile);
+        }
         super.run(resultsBuilder);
     }
 

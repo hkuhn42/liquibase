@@ -12,12 +12,13 @@ import liquibase.executor.LoggingExecutor;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.Collections;
 import java.util.List;
 
 public abstract class AbstractOutputWriterCommandStep extends AbstractHelperCommandStep implements CleanUpCommandStep {
 
-    private OutputStreamWriter outputStreamWriter;
+    private Writer outputWriter;
 
     @Override
     public List<Class<?>> providedDependencies() {
@@ -43,15 +44,14 @@ public abstract class AbstractOutputWriterCommandStep extends AbstractHelperComm
     @Override
     public void run(CommandResultsBuilder resultsBuilder) throws Exception {
         CommandScope commandScope = resultsBuilder.getCommandScope();
-        String charsetName = GlobalConfiguration.OUTPUT_FILE_ENCODING.getCurrentValue();
-        outputStreamWriter = new OutputStreamWriter(resultsBuilder.getOutputStream(), charsetName);
+        outputWriter = createOutputWriter(commandScope, resultsBuilder);
         Database database = (Database) commandScope.getDependency(Database.class);
         Executor databaseExecutor = Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor("jdbc", database);
-        LoggingExecutor loggingExecutor = new LoggingExecutor(databaseExecutor, outputStreamWriter, database);
+        LoggingExecutor loggingExecutor = new LoggingExecutor(databaseExecutor, outputWriter, database);
         Scope.getCurrentScope().getSingleton(ExecutorService.class).setExecutor("jdbc", database, loggingExecutor);
         Scope.getCurrentScope().getSingleton(ExecutorService.class).setExecutor("logging", database, loggingExecutor);
 
-        commandScope.provideDependency(getProvidedWriterDependency(), outputStreamWriter);
+        commandScope.provideDependency(getProvidedWriterDependency(), outputWriter);
     }
 
     @Override
@@ -62,14 +62,19 @@ public abstract class AbstractOutputWriterCommandStep extends AbstractHelperComm
 
     @Override
     public void cleanUp(CommandResultsBuilder resultsBuilder) {
-        if (outputStreamWriter != null) {
+        if (outputWriter != null) {
             Scope.getCurrentScope().getSingleton(ExecutorService.class).reset();
             try {
-                outputStreamWriter.close();
+                outputWriter.close();
             } catch (IOException e) {
                 Scope.getCurrentScope().getLog(getClass()).warning("Failed to close output stream writer.", e);
             }
         }
+    }
+
+    protected Writer createOutputWriter(CommandScope commandScope, CommandResultsBuilder resultsBuilder) throws IOException {
+        String charsetName = GlobalConfiguration.OUTPUT_FILE_ENCODING.getCurrentValue();
+        return new OutputStreamWriter(resultsBuilder.getOutputStream(), charsetName);
     }
 
 }
