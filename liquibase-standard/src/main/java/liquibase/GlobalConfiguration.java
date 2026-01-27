@@ -39,6 +39,7 @@ public class GlobalConfiguration implements AutoloadedConfigurations {
     public static final ConfigurationDefinition<Boolean> ALWAYS_DROP_INSTEAD_OF_REPLACE;
     public static final ConfigurationDefinition<DuplicateFileMode> DUPLICATE_FILE_MODE;
     public static final ConfigurationDefinition<Boolean> ALLOW_DUPLICATED_CHANGESETS_IDENTIFIERS;
+    public static final ConfigurationDefinition<Boolean> OMIT_SCHEMAS;
 
     public static final ConfigurationDefinition<Boolean> VALIDATE_XML_CHANGELOG_FILES;
 
@@ -248,6 +249,12 @@ public class GlobalConfiguration implements AutoloadedConfigurations {
 
         ALLOW_DUPLICATED_CHANGESETS_IDENTIFIERS = builder.define("allowDuplicatedChangesetIdentifiers", Boolean.class)
                 .setDescription("Allows duplicated changeset identifiers without failing Liquibase execution.")
+                .setDefaultValue(false)
+                .build();
+
+        OMIT_SCHEMAS = builder.define("omitSchemas", Boolean.class)
+                .addAliasKey("ommitSchemas")
+                .setDescription("If true, Liquibase will omit schema names when generating SQL for the DATABASECHANGELOG table.")
                 .setDefaultValue(false)
                 .build();
 

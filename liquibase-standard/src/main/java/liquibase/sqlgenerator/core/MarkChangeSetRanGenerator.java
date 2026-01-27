@@ -1,6 +1,7 @@
 package liquibase.sqlgenerator.core;
 
 import liquibase.ChecksumVersion;
+import liquibase.GlobalConfiguration;
 import liquibase.Scope;
 import liquibase.change.Change;
 import liquibase.change.core.TagDatabaseChange;
@@ -59,11 +60,12 @@ public class MarkChangeSetRanGenerator extends AbstractSqlGenerator<MarkChangeSe
                 final String liquibaseVersion = getLiquibaseBuildVersion();
                 final String description = StringUtil.limitSize(changeSet.getDescription(), 250);
                 final String md5Sum = changeSet.generateCheckSum(ChecksumVersion.latest()).toString();
-				final String execType = statement.getExecType().value;
+                final String execType = statement.getExecType().value;
 				final String deploymentId = Scope.getCurrentScope().getDeploymentId();
+                final String liquibaseSchemaName = getLiquibaseSchemaName(database);
 
 				if (statement.getExecType().ranBefore) {
-	                runStatement = new UpdateStatement(database.getLiquibaseCatalogName(), database.getLiquibaseSchemaName(), database.getDatabaseChangeLogTableName())
+	                runStatement = new UpdateStatement(database.getLiquibaseCatalogName(), liquibaseSchemaName, database.getDatabaseChangeLogTableName())
 	                        .addNewColumnValue("DATEEXECUTED", dateExecuted)
 	                        .addNewColumnValue("ORDEREXECUTED", orderExecuted)
 	                        .addNewColumnValue("MD5SUM", md5Sum)
@@ -83,7 +85,7 @@ public class MarkChangeSetRanGenerator extends AbstractSqlGenerator<MarkChangeSe
                         ((UpdateStatement) runStatement).addNewColumnValue("TAG", tag);
                     }
                 } else {
-					runStatement = new InsertStatement(database.getLiquibaseCatalogName(), database.getLiquibaseSchemaName(), database.getDatabaseChangeLogTableName())
+					runStatement = new InsertStatement(database.getLiquibaseCatalogName(), liquibaseSchemaName, database.getDatabaseChangeLogTableName())
                             .addColumnValue("ID", changeSet.getId())
                             .addColumnValue("AUTHOR", changeSet.getAuthor())
                             .addColumnValue("FILENAME", changeSet.getFilePath())
@@ -141,5 +143,12 @@ public class MarkChangeSetRanGenerator extends AbstractSqlGenerator<MarkChangeSe
 
     protected String getLabelsColumn(ChangeSet changeSet) {
         return changeSet.buildFullLabels();
+    }
+
+    private String getLiquibaseSchemaName(Database database) {
+        if (Boolean.TRUE.equals(GlobalConfiguration.OMIT_SCHEMAS.getCurrentValue())) {
+            return null;
+        }
+        return database.getLiquibaseSchemaName();
     }
 }
