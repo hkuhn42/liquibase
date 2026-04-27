@@ -47,14 +47,14 @@ jobs:
     steps:
 
       - name: Configure AWS credentials for vault access
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Get secrets from vault
         id: vault-secrets
-        uses: aws-actions/aws-secretsmanager-get-secrets@v2
+        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 # v3.0.1
         with:
           secret-ids: |
             ,/vault/liquibase
@@ -62,7 +62,7 @@ jobs:
 
       - name: Get GitHub App token
         id: get-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
         with:
           app-id: ${{ env.LIQUIBASE_GITHUB_APP_ID }}
           private-key: ${{ env.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
@@ -72,7 +72,7 @@ jobs:
 
       - name: Invoke Create Release
         id: trigger-step
-        uses: the-actions-org/workflow-dispatch@v4
+        uses: the-actions-org/workflow-dispatch@3133c5d135c7dbe4be4f9793872b6ef331b53bc7 # v4.0.0
         with:
           workflow: create-release.yml
           token: ${{ steps.get-token.outputs.token }}
@@ -169,7 +169,7 @@ jobs:
           | Workflow | Link |
           |----------|------|
           | **create-release** | [View Runs](https://github.com/${{ github.repository }}/actions/workflows/create-release.yml) |
-          | **release-published** | [View Runs](https://github.com/${{ github.repository }}/actions/workflows/release-published.yml) |
+          | **release-published-orchestrator** | [View Runs](https://github.com/${{ github.repository }}/actions/workflows/release-published-orchestrator.yml) |
           EOF
 
   dry-run-release-published:
@@ -178,14 +178,14 @@ jobs:
     steps:
 
       - name: Configure AWS credentials for vault access
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Get secrets from vault
         id: vault-secrets
-        uses: aws-actions/aws-secretsmanager-get-secrets@v2
+        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 # v3.0.1
         with:
           secret-ids: |
             ,/vault/liquibase
@@ -193,7 +193,7 @@ jobs:
 
       - name: Get GitHub App token
         id: get-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
         with:
           app-id: ${{ env.LIQUIBASE_GITHUB_APP_ID }}
           private-key: ${{ env.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
@@ -201,12 +201,12 @@ jobs:
           permission-contents: write
           permission-actions: write
 
-      - name: Trigger release-published workflow
-        uses: the-actions-org/workflow-dispatch@v4
+      - name: Trigger release-published-orchestrator workflow
+        uses: the-actions-org/workflow-dispatch@3133c5d135c7dbe4be4f9793872b6ef331b53bc7 # v4.0.0
         with:
-          workflow: release-published.yml
+          workflow: release-published-orchestrator.yml
           token: ${{ steps.get-token.outputs.token }}
-          inputs: '{"tag": "vdry-run-${{ github.run_id }}", "dry_run_release_id": "${{ needs.dry-run-create-release.outputs.dry_run_release_id }}", "dry_run_zip_url": "${{ needs.dry-run-create-release.outputs.dry_run_zip_url }}", "dry_run_tar_gz_url": "${{ needs.dry-run-create-release.outputs.dry_run_tar_gz_url }}", "dry_run": "true", "dry_run_branch_name": "${{ needs.setup.outputs.dry_run_branch_name }}"}'
+          inputs: '{"tag": "vdry-run-${{ github.run_id }}", "dry_run_release_id": "${{ needs.dry-run-create-release.outputs.dry_run_release_id }}", "dry_run_zip_url": "${{ needs.dry-run-create-release.outputs.dry_run_zip_url }}", "dry_run_tar_gz_url": "${{ needs.dry-run-create-release.outputs.dry_run_tar_gz_url }}", "dry_run": true, "dry_run_branch_name": "${{ needs.setup.outputs.dry_run_branch_name }}"}'
           ref: master
           wait-for-completion: true
 
@@ -216,7 +216,7 @@ jobs:
     needs: [setup, dry-run-create-release, dry-run-release-published]
     steps:
       - name: Checkout liquibase
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Git
         run: |
@@ -243,27 +243,31 @@ jobs:
     steps:
 
       - name: Configure AWS credentials for vault access
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Get secrets from vault
         id: vault-secrets
-        uses: aws-actions/aws-secretsmanager-get-secrets@v2
+        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 # v3.0.1
         with:
           secret-ids: |
             ,/vault/liquibase
           parse-json-secrets: true
 
       - name: Notify Slack on Build Failure
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_COLOR: failure
-          SLACK_MESSAGE: "View details on GitHub Actions: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} <@U040C8J8143> <@U04P39MS2SW> <@UHHJ6UAEQ> <@U042HRTL4DT>" # Jandro, Sailee, Jake, Filipe
-          SLACK_TITLE: "❌ ${{ github.repository }} ❌ Build failed on branch ${{ github.ref }} for commit ${{ github.sha }} in repository ${{github.repository}}"
-          SLACK_USERNAME: liquibot
-          SLACK_WEBHOOK: ${{ env.DRY_RUN_RELEASE_SLACK_WEBHOOK }}
-          SLACK_ICON_EMOJI: ":robot_face:"
-          SLACK_FOOTER: "${{ github.repository }}"
-          SLACK_LINK_NAMES: true
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        with:
+          method: chat.postMessage
+          token: ${{ env.DRY_RUN_SLACK_BOT_TOKEN }}
+          payload: |
+            channel: ${{ env.DRYRUN_RELEASES_SLACK_ID }}
+            username: "liquibot"
+            icon_emoji: ":robot_face:"
+            link_names: true
+            attachments:
+              - color: "danger"
+                title: "❌ ${{ github.repository }} ❌ Build failed on branch ${{ github.ref }} for commit ${{ github.sha }}"
+                text: "View details on GitHub Actions: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} <@U040C8J8143> <@U04P39MS2SW> <@UHHJ6UAEQ> <@U042HRTL4DT>"
+                footer: "${{ github.repository }}"

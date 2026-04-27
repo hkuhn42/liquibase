@@ -31,6 +31,24 @@ Global Options
                                'LIQUIBASE_ALLOW_DUPLICATED_CHANGESET_IDENTIFIERS
                                ')
 
+      --allow-inherit-logical-file-path=PARAM
+                             If true, included changelogs without an explicit
+                               logicalFilePath will inherit their parent
+                               changelog's logicalFilePath, and explicit
+                               logicalFilePath attributes on include statements
+                               are honored (Liquibase 4.31.0+ behavior). If
+                               false, included changelogs use their physical
+                               file paths, ignoring both implicit inheritance
+                               and explicit logicalFilePath attributes on
+                               include statements. Only logicalFilePath set
+                               directly on the changelog itself is respected.
+                               Defaults to true for backward compatibility.
+                             DEFAULT: true
+                             (defaults file: 'liquibase.
+                               allowInheritLogicalFilePath', environment
+                               variable:
+                               'LIQUIBASE_ALLOW_INHERIT_LOGICAL_FILE_PATH')
+
       --always-drop-instead-of-replace=PARAM
                              If true, drop and recreate a view instead of
                                replacing it.
@@ -139,6 +157,16 @@ Global Options
                              DEFAULT: liquibase.properties
                              (defaults file: 'liquibase.defaultsFile',
                                environment variable: 'LIQUIBASE_DEFAULTS_FILE')
+
+      --diff-column-default-value-constraint-name=PARAM
+                             Should Liquibase compare column default value
+                               constraint name in diff operation?
+                             DEFAULT: true
+                             (defaults file: 'liquibase.
+                               diffColumnDefaultValueConstraintName',
+                               environment variable:
+                               'LIQUIBASE_DIFF_COLUMN_DEFAULT_VALUE_CONSTRAINT_N
+                               AME')
 
       --diff-column-order=PARAM
                              Should Liquibase compare column order in diff

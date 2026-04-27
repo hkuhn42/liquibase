@@ -20,7 +20,15 @@ permissions:
   id-token: write # Required for OIDC authentication with AWS
   
 jobs:
+
+  authorize:
+    environment: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository && 'external' || 'internal' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: true
+
   test-harness-build:
+    needs: authorize
     runs-on: ubuntu-latest
     if: contains(github.event.pull_request.labels.*.name, 'runFunctional&HarnessTests') || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target')
     steps:
@@ -34,7 +42,7 @@ jobs:
           echo "github.event.pull_request.merged: ${{ github.event.pull_request.merged }}"
           echo "github.event_name: ${{ github.event_name }}"
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha || github.event.after}} #sets the Git reference (commit or branch) to be checked out in the workflow
 
@@ -43,7 +51,7 @@ jobs:
     needs: [ test-harness-build ]
     name: Trigger Test Harness Tests
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set environment variables for PR branch and SHA
         run: |
@@ -63,14 +71,14 @@ jobs:
           echo "ossWorkflowUrl=${ossWorkflowUrl}" >> $GITHUB_ENV
 
       - name: Configure AWS credentials for vault access
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Get secrets from vault
         id: vault-secrets
-        uses: aws-actions/aws-secretsmanager-get-secrets@v2
+        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 # v3.0.1
         with:
           secret-ids: |
             ,/vault/liquibase
@@ -78,7 +86,7 @@ jobs:
 
       - name: Get GitHub App token
         id: get-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
         with:
           app-id: ${{ env.LIQUIBASE_GITHUB_APP_ID }}
           private-key: ${{ env.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
@@ -87,7 +95,7 @@ jobs:
           permission-actions: write
           
       - name: Dispatch an action and get the run ID
-        uses: codex-/return-dispatch@v3
+        uses: codex-/return-dispatch@16fa9d14771c4d56ae0196bbda1d3c17f7f3650f # v3
         id: return_dispatch
         with:
           token: ${{ steps.get-token.outputs.token }}
@@ -105,7 +113,7 @@ jobs:
         run: echo ${{ steps.return_dispatch.outputs.run_id }}
 
       - name: Report TestHarness Run URL
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const targetURL = "https://github.com/liquibase/liquibase-test-harness/actions/runs/${{ steps.return_dispatch.outputs.run_id }}"
