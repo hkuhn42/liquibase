@@ -57,17 +57,9 @@ public class GlobalConfiguration implements AutoloadedConfigurations {
     
     public static final ConfigurationDefinition<UIServiceEnum>                      UI_SERVICE;
     public static final ConfigurationDefinition<SupportsMethodValidationLevelsEnum> SUPPORTS_METHOD_VALIDATION_LEVEL;
-<<<<<<< HEAD
-    
     public static final ConfigurationDefinition<Boolean>                            PRESERVE_CLASSPATH_PREFIX_IN_NORMALIZED_PATHS;
-    
-=======
-
-    public static final ConfigurationDefinition<Boolean> PRESERVE_CLASSPATH_PREFIX_IN_NORMALIZED_PATHS;
-    public static final ConfigurationDefinition<Boolean> ALLOW_INHERIT_LOGICAL_FILE_PATH;
-    public static final ConfigurationDefinition<Boolean> DIFF_COLUMN_DEFAULT_VALUE_CONSTRAINT_NAME;
-
->>>>>>> branch 'master' of https://github.com/hkuhn42/liquibase.git
+    public static final ConfigurationDefinition<Boolean>                            ALLOW_INHERIT_LOGICAL_FILE_PATH;
+    public static final ConfigurationDefinition<Boolean>                            DIFF_COLUMN_DEFAULT_VALUE_CONSTRAINT_NAME;
     static {
         ConfigurationDefinition.Builder builder = new ConfigurationDefinition.Builder("liquibase");
         
@@ -284,25 +276,19 @@ public class GlobalConfiguration implements AutoloadedConfigurations {
             .build();
         
         PRESERVE_CLASSPATH_PREFIX_IN_NORMALIZED_PATHS = builder.define("preserveClasspathPrefixInNormalizedPaths", Boolean.class)
-<<<<<<< HEAD
             .setDescription("If true 'classpath:' prefix will be preserved in normalized paths, allowing to resolve hierarchical resources under a classpath-based root.")
             .setDefaultValue(false)
             .build();
-=======
-                .setDescription("If true 'classpath:' prefix will be preserved in normalized paths, allowing to resolve hierarchical resources under a classpath-based root.")
-                .setDefaultValue(false)
-                .build();
 
         ALLOW_INHERIT_LOGICAL_FILE_PATH = builder.define("allowInheritLogicalFilePath", Boolean.class)
-                .setDescription("If true, included changelogs without an explicit logicalFilePath will inherit their parent changelog's logicalFilePath, and explicit logicalFilePath attributes on include statements are honored (Liquibase 4.31.0+ behavior). If false, included changelogs use their physical file paths, ignoring both implicit inheritance and explicit logicalFilePath attributes on include statements. Only logicalFilePath set directly on the changelog itself is respected. Defaults to true for backward compatibility.")
-                .setDefaultValue(true)
-                .build();
+            .setDescription("If true, included changelogs without an explicit logicalFilePath will inherit their parent changelog's logicalFilePath, and explicit logicalFilePath attributes on include statements are honored (Liquibase 4.31.0+ behavior). If false, included changelogs use their physical file paths, ignoring both implicit inheritance and explicit logicalFilePath attributes on include statements. Only logicalFilePath set directly on the changelog itself is respected. Defaults to true for backward compatibility.")
+            .setDefaultValue(true)
+            .build();
 
         DIFF_COLUMN_DEFAULT_VALUE_CONSTRAINT_NAME = builder.define("diffColumnDefaultValueConstraintName", Boolean.class)
-                .setDescription("Should Liquibase compare column default value constraint name in diff operation?")
-                .setDefaultValue(true)
-                .build();
->>>>>>> branch 'master' of https://github.com/hkuhn42/liquibase.git
+            .setDescription("Should Liquibase compare column default value constraint name in diff operation?")
+            .setDefaultValue(true)
+            .build();
     }
     
     public enum DuplicateFileMode {
