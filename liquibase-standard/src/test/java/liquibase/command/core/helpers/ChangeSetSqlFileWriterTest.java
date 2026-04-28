@@ -10,6 +10,7 @@ import liquibase.executor.ExecutorService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -23,7 +24,8 @@ class ChangeSetSqlFileWriterTest {
     @Test
     void writesEachChangeSetToSeparateFile() throws Exception {
         Path outputFile = tempDir.resolve("output.sql");
-        ChangeSetSqlFileWriter writer = new ChangeSetSqlFileWriter(outputFile.toString());
+        StringWriter mainWriter = new StringWriter();
+        ChangeSetSqlFileWriter writer = new ChangeSetSqlFileWriter(outputFile.toString(), mainWriter);
 
         DatabaseChangeLog changeLog = new DatabaseChangeLog("changelog.xml");
         ChangeSet changeSet = new ChangeSet("1", "tester", false, false, "changelog.xml", null, null, null);
@@ -42,5 +44,6 @@ class ChangeSetSqlFileWriterTest {
         String content = Files.readString(changeSetFile);
         assertTrue(content.contains("Update Changeset"));
         assertTrue(content.contains("test statement"));
+        assertTrue(mainWriter.toString().contains("@@output-1-tester-changelog.xml.sql"));
     }
 }

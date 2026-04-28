@@ -11,6 +11,7 @@ import liquibase.integration.commandline.LiquibaseCommandLineConfiguration;
 import liquibase.util.StringUtil;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 import java.util.Arrays;
 
@@ -23,7 +24,7 @@ public class ChangeSetSplitOutputWriterCommandStep extends AbstractHelperCommand
 
     @Override
     public List<Class<?>> requiredDependencies() {
-        return Arrays.asList(Database.class, ChangeExecListener.class);
+        return Arrays.asList(Database.class, ChangeExecListener.class, Writer.class);
     }
 
     @Override
@@ -44,11 +45,11 @@ public class ChangeSetSplitOutputWriterCommandStep extends AbstractHelperCommand
         }
 
         String outputFile = LiquibaseCommandLineConfiguration.OUTPUT_FILE.getCurrentValue();
-        writer = new ChangeSetSqlFileWriter(outputFile);
+        Writer mainWriter = (Writer) commandScope.getDependency(Writer.class);
+        writer = new ChangeSetSqlFileWriter(outputFile, mainWriter);
         ChangeExecListener existingListener = (ChangeExecListener) commandScope.getDependency(ChangeExecListener.class);
         writer.setDelegate(existingListener);
         commandScope.provideDependency(ChangeExecListener.class, writer);
-        writer.getFallbackOutputStream();
     }
 
     @Override

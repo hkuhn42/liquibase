@@ -2,8 +2,11 @@ package liquibase.command.core;
 
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import liquibase.GlobalConfiguration;
+import liquibase.Scope;
 import liquibase.UpdateSummaryEnum;
 import liquibase.command.CommandArgumentDefinition;
 import liquibase.command.CommandBuilder;
@@ -27,6 +30,7 @@ public class UpdateSqlCommandStep extends AbstractUpdateCommandStep {
     public static final CommandArgumentDefinition<Boolean> OUTPUT_DEFAULT_SCHEMA_ARG;
     public static final CommandArgumentDefinition<Boolean> OUTPUT_DEFAULT_CATALOG_ARG;
     public static final CommandArgumentDefinition<Boolean> SPLIT_SQL_OUTPUT_ARG;
+    public static final CommandArgumentDefinition<Boolean> OMIT_SCHEMAS_ARG;
     
     static {
         CommandBuilder builder = new CommandBuilder(COMMAND_NAME, LEGACY_COMMAND_NAME);
@@ -50,7 +54,10 @@ public class UpdateSqlCommandStep extends AbstractUpdateCommandStep {
             .build();
         SPLIT_SQL_OUTPUT_ARG = builder.argument("splitOutput", Boolean.class)
             .description("Write output SQL to a separate file per changeset when outputFile is set")
-            .defaultValue(true)
+            .defaultValue(false)
+            .build();
+        OMIT_SCHEMAS_ARG = builder.argument("omitSchemas", Boolean.class)
+            .description("Omit schema names from generated SQL")
             .build();
     }
     
@@ -71,7 +78,14 @@ public class UpdateSqlCommandStep extends AbstractUpdateCommandStep {
         if (!Boolean.TRUE.equals(splitOutput)) {
             LoggingExecutorTextUtil.outputHeader("Update Database Script", database, changelogFile);
         }
-        super.run(resultsBuilder);
+        Boolean omitSchemas = commandScope.getArgumentValue(OMIT_SCHEMAS_ARG);
+        if (omitSchemas == null) {
+            super.run(resultsBuilder);
+        } else {
+            Scope.child(Collections.singletonMap(GlobalConfiguration.OMIT_SCHEMAS.getKey(), omitSchemas), () -> {
+                super.run(resultsBuilder);
+            });
+        }
     }
     
     @Override

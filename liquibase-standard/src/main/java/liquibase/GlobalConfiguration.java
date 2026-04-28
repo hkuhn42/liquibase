@@ -252,8 +252,9 @@ public class GlobalConfiguration implements AutoloadedConfigurations {
             .build();
         
         OMIT_SCHEMAS = builder.define("omitSchemas", Boolean.class)
-            .setDescription("If true, Liquibase will omit schema names when generating SQL for the DATABASECHANGELOG table.")
-            .setDefaultValue(true)
+            .setDescription("If true, Liquibase will omit schema names when generating SQL.")
+            .addAliasKey("liquibase.command.omitSchemas")
+            .setDefaultValue(false)
             .build();
         
         VALIDATE_XML_CHANGELOG_FILES = builder.define("validateXmlChangelogFiles", Boolean.class)

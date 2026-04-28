@@ -20,7 +20,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.file.Files;
@@ -31,13 +30,21 @@ import java.nio.file.Path;
  */
 public class ChangeSetSqlFileWriter implements ChangeExecListener, Closeable {
     private final Path outputPath;
+    private final Writer mainWriter;
     private ChangeExecListener delegate;
     private Writer changeSetWriter;
     private LoggingExecutor loggingExecutor;
-    private OutputStream fallbackOutputStream;
+    private Executor previousJdbcExecutor;
+    private Executor previousLoggingExecutor;
+    private Database currentDatabase;
 
     public ChangeSetSqlFileWriter(String outputFilePath) throws IOException {
+        this(outputFilePath, null);
+    }
+
+    public ChangeSetSqlFileWriter(String outputFilePath, Writer mainWriter) throws IOException {
         this.outputPath = Path.of(outputFilePath).toAbsolutePath();
+        this.mainWriter = mainWriter;
         if (outputPath.getParent() != null) {
             Files.createDirectories(outputPath.getParent());
         }
@@ -45,13 +52,6 @@ public class ChangeSetSqlFileWriter implements ChangeExecListener, Closeable {
 
     public void setDelegate(ChangeExecListener delegate) {
         this.delegate = delegate;
-    }
-
-    public OutputStream getFallbackOutputStream() throws IOException {
-        if (fallbackOutputStream == null) {
-            fallbackOutputStream = new FileOutputStream(outputPath.toFile(), false);
-        }
-        return fallbackOutputStream;
     }
 
     @Override
@@ -139,12 +139,22 @@ public class ChangeSetSqlFileWriter implements ChangeExecListener, Closeable {
         if (filePath.getParent() != null) {
             Files.createDirectories(filePath.getParent());
         }
+        if (mainWriter != null) {
+            String scriptPath = outputPath.getParent().relativize(filePath).toString().replace(File.separatorChar, '/');
+            mainWriter.write("@@" + scriptPath + System.lineSeparator());
+            mainWriter.flush();
+        }
         changeSetWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filePath.toFile(), false),
                 liquibase.GlobalConfiguration.OUTPUT_FILE_ENCODING.getCurrentValue()));
-        Executor jdbcExecutor = Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor("jdbc", database);
-        loggingExecutor = new LoggingExecutor(jdbcExecutor, changeSetWriter, database);
-        Scope.getCurrentScope().getSingleton(ExecutorService.class).setExecutor("jdbc", database, loggingExecutor);
-        Scope.getCurrentScope().getSingleton(ExecutorService.class).setExecutor("logging", database, loggingExecutor);
+        ExecutorService executorService = Scope.getCurrentScope().getSingleton(ExecutorService.class);
+        previousJdbcExecutor = executorService.getExecutor("jdbc", database);
+        if (executorService.executorExists("logging", database)) {
+            previousLoggingExecutor = executorService.getExecutor("logging", database);
+        }
+        currentDatabase = database;
+        loggingExecutor = new LoggingExecutor(previousJdbcExecutor, changeSetWriter, database);
+        executorService.setExecutor("jdbc", database, loggingExecutor);
+        executorService.setExecutor("logging", database, loggingExecutor);
         LoggingExecutorTextUtil.outputHeader("Update Changeset " + changeSet.toString(false), database,
                 changeSet.getChangeLog() != null ? changeSet.getChangeLog().getFilePath() : changeSet.getFilePath());
     }
@@ -175,6 +185,19 @@ public class ChangeSetSqlFileWriter implements ChangeExecListener, Closeable {
     }
 
     private void closeChangeSetOutput() {
+        if (loggingExecutor != null) {
+            ExecutorService executorService = Scope.getCurrentScope().getSingleton(ExecutorService.class);
+            executorService.setExecutor("jdbc", currentDatabase, previousJdbcExecutor);
+            if (previousLoggingExecutor == null) {
+                executorService.clearExecutor("logging", currentDatabase);
+            } else {
+                executorService.setExecutor("logging", currentDatabase, previousLoggingExecutor);
+            }
+            loggingExecutor = null;
+            previousJdbcExecutor = null;
+            previousLoggingExecutor = null;
+            currentDatabase = null;
+        }
         if (changeSetWriter != null) {
             try {
                 changeSetWriter.flush();
@@ -189,8 +212,5 @@ public class ChangeSetSqlFileWriter implements ChangeExecListener, Closeable {
     @Override
     public void close() throws IOException {
         closeChangeSetOutput();
-        if (fallbackOutputStream != null) {
-            fallbackOutputStream.close();
-        }
     }
 }

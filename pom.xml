@@ -500,6 +500,7 @@
                     <quiet>true</quiet>
                     <doclint>none</doclint>
                     <encoding>UTF-8</encoding>
+                    <legacyMode>true</legacyMode>
 
                     <includeDependencySources>false</includeDependencySources>
                     <excludePackageNames>com.datical.*,*.pro,*.pro.*</excludePackageNames>

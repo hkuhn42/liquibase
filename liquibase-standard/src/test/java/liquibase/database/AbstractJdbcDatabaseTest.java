@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -292,6 +293,13 @@ public abstract class AbstractJdbcDatabaseTest {
         tableName = database.escapeObjectName("My Table", Table.class);
         assertThat(tableName).isEqualToIgnoringCase(
             database.getQuotingStartCharacter() + "My Table" + database.getQuotingEndCharacter());
+    }
+
+    @Test
+    public void test_escapeObjectName_omitSchemas() throws Exception {
+        Scope.child(Collections.singletonMap("liquibase.command.omitSchemas", true), () -> {
+            assertThat(database.escapeObjectName(null, "APP", "CUSTOMER", Table.class)).isEqualTo("CUSTOMER");
+        });
     }
 
 //    @Test

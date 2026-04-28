@@ -439,6 +439,9 @@ public class MSSQLDatabase extends AbstractJdbcDatabase {
         if (Index.class.isAssignableFrom(objectType)) {
             return super.escapeObjectName(objectName, objectType);
         }
+        if (Boolean.TRUE.equals(GlobalConfiguration.OMIT_SCHEMAS.getCurrentValue())) {
+            return super.escapeObjectName(objectName, objectType);
+        }
 
         boolean includeCatalog = GlobalConfiguration.INCLUDE_CATALOG_IN_SPECIFICATION.getCurrentValue();
         if ((catalogName != null) && (includeCatalog || !catalogName.equalsIgnoreCase(this.getDefaultCatalogName()))) {
